@@ -1,0 +1,9 @@
+[tape]
+name = "end-4"
+desc = "Usability-first dotfiles"
+
+[hooks]
+insert = ["hyprctl reload", "pkill -x qs", "qs -c ii -d"]
+eject = ["hyprctl reload", "pkill -x qs"]
+
+install = ["chmod +x ./setup.sh", "./setup.sh"]

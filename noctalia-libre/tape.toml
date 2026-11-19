@@ -15,3 +15,5 @@ dependencies = [
 [hooks]
 insert = ["mmsg dispatch reload_config || hyprctl reload", "noctalia -d"]
 eject = ["pkill noctalia"]
+
+install = ["git clone https://github.com/futurekismo-oss/noctalia-libre"]

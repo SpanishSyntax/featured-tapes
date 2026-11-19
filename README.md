@@ -15,6 +15,35 @@ tapes install-featured TAPE-NAME
 - [Noctalia-Libre](https://github.com/futurekismo-oss/featured-tapes/tree/main/noctalia-libre)
 
 
+## NixOS & Home Manager
+
+Because `setup.sh` scripts target imperative distributions, this repository also provides a Nix flake that builds each tape cleanly into the Nix store and supplies its runtime packages, fonts, and QML plugins declaratively.
+
+### Quick trial (without modifying your system)
+
+```bash
+nix develop github:futurekismo-oss/featured-tapes#nebula
+# then follow the printed `tapes insert -p /nix/store/...` command
+```
+
+### Home Manager
+
+Add `featured-tapes` to your flake inputs and enable the rices you want:
+
+```nix
+{
+  imports = [ inputs.featured-tapes.homeManagerModules.default ];
+
+  programs.featured-tapes = {
+    enable = true;
+    tapes = [ "caelestia" "nebula" "noctalia-libre" ];
+  };
+}
+```
+
+Each enabled rice is materialized into `~/.tapes/<name>` with its Nix runtime dependencies installed, ready to insert via `tapes insert <name>` or `tapes-deck`.
+
+
 ## Contributing
 Want to add a tape? Read [CONTRIBUTING.md](CONTRIBUTING.md) for the structure, the `tape.toml` format and the rules for `setup.sh`.
 

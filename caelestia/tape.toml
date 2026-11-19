@@ -1,7 +1,37 @@
 [tape]
 name = "caelestia"
 desc = "A fluid, morphing interface to your Linux desktop"
-dependencies = ["ninja", "Hyprland", "quickshell"]
+dependencies = [
+  "caelestia-cli",
+  "quickshell-git",
+  "glibc",
+  "gcc-libs",
+  "ddcutil",
+  "brightnessctl",
+  "libcava",
+  "networkmanager",
+  "lm_sensors",
+  "aubio",
+  "libpipewire",
+  "libqalculate",
+  "power-profiles-daemon",
+  "ttf-material-symbols-variable",
+  "ttf-rubik-vf",
+  "ttf-cascadia-code-nerd",
+  "qt6-base",
+  "qt6-declarative",
+  "qt6-imageformats",
+  "qt6-multimedia",
+  "qt6-m3shapes-git",
+  "swappy",
+  "fish",
+  "bash",
+  "cmake",
+  "ninja",
+  "qt6-shadertools",
+  "Hyprland",
+  "quickshell",
+]
 
 [hooks]
 insert = ["hyprctl reload", "pkill -x qs", "qs -c caelestia -d"]

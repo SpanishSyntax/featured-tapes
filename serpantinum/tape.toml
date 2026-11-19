@@ -1,7 +1,15 @@
 [tape]
 name = "serpantinum"
 desc = "A shell for Wayland compositors built on Quickshell"
-dependencies = ["Hyprland", "quickshell", "matugen", "wl-clipboard", "cliphist", "jq", "kitty"]
+dependencies = [
+  "Hyprland",
+  "quickshell",
+  "matugen",
+  "wl-clipboard",
+  "cliphist",
+  "jq",
+  "kitty",
+]
 
 [hooks]
 insert = ["hyprctl reload", "pkill -x 'qs|quickshell' || true", "setsid -f serpantinumd start"]

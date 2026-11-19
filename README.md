@@ -12,6 +12,7 @@ tapes install-featured TAPE-NAME
 - [End-4](https://github.com/futurekismo-oss/featured-tapes/tree/main/end-4)
 - [Nebula](https://github.com/futurekismo-oss/featured-tapes/tree/main/nebula)
 - [Serpantinum](https://github.com/futurekismo-oss/featured-tapes/tree/main/serpantinum)
+- [Noctalia-Libre](https://github.com/futurekismo-oss/featured-tapes/tree/main/noctalia-libre)
 
 
 ## Contributing

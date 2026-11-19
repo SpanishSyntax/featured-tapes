@@ -1,0 +1,19 @@
+[tape]
+name = "noctalia-libre"
+desc = "futurekismo-oss dotfiles, a speed and usability first config for both hyprland and mango"
+dependencies = [
+  "mango",
+  "noctalia",
+  "foot",
+  "btop",
+  "helix",
+  "Bibata-Modern-Ice",
+  "wl-paste",
+  "hyprpicker",
+]
+
+[hooks]
+insert = ["mmsg dispatch reload_config || hyprctl reload", "noctalia -d"]
+eject = ["pkill noctalia"]
+
+install = ["git clone https://github.com/futurekismo-oss/noctalia-libre"]

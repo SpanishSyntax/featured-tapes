@@ -67,10 +67,10 @@ Notes:
 
 ## Adding the tape to the README
 
-Add a line to the list in [README.md](README.md), in the same format as the others, in alphabetical order:
+Add a line to the table in [README.md](README.md), in the same format as the others, in alphabetical order:
 
 ```md
-- [Name](https://github.com/futurekismo-oss/featured-tapes/tree/main/<folder>)
+| **[Name](<link-to-dotfiles-repo>)** | `tapes install-featured NAME` |
 ```
 
 ## AI usage

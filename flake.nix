@@ -74,57 +74,53 @@
           type = lib.types.listOf (lib.types.enum riceNames);
           default = defaultEnabled;
           example = ["caelestia" "nebula" "noctalia-libre"];
-          description = "Featured tapes to materialize into `~/.tapes/<name>` along with their Nix runtime packages.";
+          description = "Featured tapes to seed into `~/.tapes/<name>` along with their Nix runtime packages.";
         };
 
-        mutable = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
+        rename = lib.mkOption {
+          type = lib.types.attrsOf lib.types.str;
+          default = {};
+          example = {
+            nebula = "nebula-nix";
+            caelestia = "caelestia-official";
+          };
           description = ''
-            Seed writable copies of enabled featured tapes into `~/.tapes/<name>` (scaffolder mode)
-            so runtime theming tools (`matugen`, `noctalia`, `caelestia-cli`, `btop`) and `tapes-deck`
-            can write without hitting read-only `/nix/store` errors. Existing `~/.tapes/<name>`
-            directories are preserved across rebuilds; set to `false` for read-only Home Manager symlinks.
+            Optional map of `<featured-rice> -> <custom-name>` to install a tape into
+            `~/.tapes/<custom-name>` instead of `~/.tapes/<featured-rice>` (equivalent to
+            `tapes install --name`), avoiding collisions with manually installed tapes.
           '';
         };
       };
 
-      config = lib.mkIf (cfg.enable && cfg.tapes != []) (lib.mkMerge [
-        {
-          home.packages = lib.concatMap (r: r.packages) selected;
+      config = lib.mkIf (cfg.enable && cfg.tapes != []) {
+        home.packages = lib.concatMap (r: r.packages) selected;
 
-          home.sessionVariables =
-            lib.zipAttrsWith (
-              _: values:
-                lib.concatStringsSep ":" (lib.unique (lib.concatMap (lib.splitString ":") values))
-            ) (map (r: r.env) selected);
-        }
-        (lib.mkIf cfg.mutable {
-          home.activation.seedFeaturedTapes = lib.hm.dag.entryAfter ["linkGeneration"] (
-            ''
-              mkdir -p "$HOME/.tapes"
-            ''
-            + lib.concatMapStringsSep "\n" (r: ''
-              if [ ! -e "$HOME/.tapes/${r.name}/tape.toml" ]; then
-                rm -rf "$HOME/.tapes/${r.name}"
-                mkdir -p "$HOME/.tapes/${r.name}"
-                cp -rL --no-preserve=mode "${r.tape}/." "$HOME/.tapes/${r.name}/"
-                chmod -R u+w "$HOME/.tapes/${r.name}"
-              fi
-            '') selected
-          );
-        })
-        (lib.mkIf (!cfg.mutable) {
-          home.file = lib.listToAttrs (map (r: {
-              name = ".tapes/${r.name}";
-              value = {
-                source = r.tape;
-                recursive = true;
-              };
-            })
-            selected);
-        })
-      ]);
+        home.sessionVariables =
+          lib.zipAttrsWith (
+            _: values:
+              lib.concatStringsSep ":" (lib.unique (lib.concatMap (lib.splitString ":") values))
+          ) (map (r: r.env) selected);
+
+        # Seed plain writable copies into ~/.tapes/<target> (zero /nix/store symlinks inside ~/.tapes)
+        # so runtime tools (matugen, noctalia, caelestia-cli, btop) and tapes-deck work without EROFS
+        # or chained symlinks, while preserving any existing user edits across rebuilds.
+        home.activation.seedFeaturedTapes = lib.hm.dag.entryAfter ["linkGeneration"] (
+          ''
+            mkdir -p "$HOME/.tapes"
+          ''
+          + lib.concatMapStringsSep "\n" (r: let
+            targetName = cfg.rename.${r.name} or r.name;
+          in ''
+            if [ ! -e "$HOME/.tapes/${targetName}/tape.toml" ]; then
+              rm -rf "$HOME/.tapes/${targetName}"
+              mkdir -p "$HOME/.tapes/${targetName}"
+              cp -r --no-preserve=mode "${r.tape}/." "$HOME/.tapes/${targetName}/"
+              chmod -R u+w "$HOME/.tapes/${targetName}"
+            fi
+          '')
+          selected
+        );
+      };
     };
   in
     flake-utils.lib.eachSystem ["x86_64-linux" "aarch64-linux"] (system: let

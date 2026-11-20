@@ -14,8 +14,10 @@ tapes install-featured TAPE-NAME
 - [Serpantinum](https://github.com/futurekismo-oss/featured-tapes/tree/main/serpantinum)
 - [Noctalia-Libre](https://github.com/futurekismo-oss/featured-tapes/tree/main/noctalia-libre)
 
+----
 
-## NixOS & Home Manager
+<details>
+<summary><strong>NixOS & Home Manager</strong></summary>
 
 Because `setup.sh` scripts target imperative distributions, this repository also provides a Nix flake that builds each tape cleanly into the Nix store and supplies its runtime packages, fonts, and QML plugins declaratively.
 
@@ -43,6 +45,9 @@ Add `featured-tapes` to your flake inputs and enable the rices you want:
 
 Each enabled rice is materialized into `~/.tapes/<name>` with its Nix runtime dependencies installed, ready to insert via `tapes insert <name>` or `tapes-deck`.
 
+</details>
+
+----
 
 ## Contributing
 Want to add a tape? Read [CONTRIBUTING.md](CONTRIBUTING.md) for the structure, the `tape.toml` format and the rules for `setup.sh`.

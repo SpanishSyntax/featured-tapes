@@ -17,6 +17,10 @@
       url = "github:end-4/dots-hyprland";
       flake = false;
     };
+    end-4-rounded-polygon = {
+      url = "github:end-4/rounded-polygon-qmljs";
+      flake = false;
+    };
     nebula-dots = {
       url = "github:LilaccFlowerr/Nebula";
       flake = false;
@@ -56,6 +60,33 @@
           lib = pkgs.lib;
         });
 
+    mkWrappedQuickshell = pkgs: qmlDirs: pluginDirs: let
+      uQml = nixpkgs.lib.unique qmlDirs;
+      uPlug = nixpkgs.lib.unique pluginDirs;
+    in
+      if uQml == [] && uPlug == []
+      then pkgs.quickshell
+      else
+        pkgs.runCommand "quickshell-wrapped-${pkgs.quickshell.version}" {
+          nativeBuildInputs = [pkgs.makeWrapper];
+        } ''
+          mkdir -p "$out/bin"
+          for prog in qs quickshell; do
+            if [ -e "${pkgs.quickshell}/bin/$prog" ]; then
+              makeWrapper "${pkgs.quickshell}/bin/$prog" "$out/bin/$prog" \
+                --prefix NIXPKGS_QT6_QML_IMPORT_PATH : "${nixpkgs.lib.concatStringsSep ":" uQml}" \
+                --prefix QML2_IMPORT_PATH : "${nixpkgs.lib.concatStringsSep ":" uQml}" \
+                --prefix QT_PLUGIN_PATH : "${nixpkgs.lib.concatStringsSep ":" uPlug}"
+            fi
+          done
+        '';
+
+    ricePackages = pkgs: r:
+      r.packages
+      ++ nixpkgs.lib.optional (r.needsQuickshell or false) (
+        mkWrappedQuickshell pkgs (r.qmlDirs or []) (r.pluginDirs or [])
+      );
+
     mkHomeModule = defaultEnabled: {
       config,
       lib,
@@ -66,6 +97,9 @@
       system = pkgs.stdenv.hostPlatform.system;
       rices = loadRices system pkgs;
       selected = map (name: rices.${name}) cfg.tapes;
+      anyQuickshell = lib.any (r: r.needsQuickshell or false) selected;
+      allQmlDirs = lib.concatMap (r: r.qmlDirs or []) selected;
+      allPluginDirs = lib.concatMap (r: r.pluginDirs or []) selected;
     in {
       options.programs.featured-tapes = {
         enable = lib.mkEnableOption "Declarative featured tapes and their Nix runtime dependencies";
@@ -93,7 +127,9 @@
       };
 
       config = lib.mkIf (cfg.enable && cfg.tapes != []) {
-        home.packages = lib.concatMap (r: r.packages) selected;
+        home.packages =
+          (lib.concatMap (r: r.packages) selected)
+          ++ lib.optional anyQuickshell (mkWrappedQuickshell pkgs allQmlDirs allPluginDirs);
 
         home.sessionVariables =
           lib.zipAttrsWith (
@@ -116,6 +152,9 @@
               mkdir -p "$HOME/.tapes/${targetName}"
               cp -r --no-preserve=mode "${r.tape}/." "$HOME/.tapes/${targetName}/"
               chmod -R u+w "$HOME/.tapes/${targetName}"
+            else
+              cp -rn --no-preserve=mode "${r.tape}/." "$HOME/.tapes/${targetName}/" 2>/dev/null || true
+              chmod -R u+w "$HOME/.tapes/${targetName}"
             fi
           '')
           selected
@@ -135,7 +174,7 @@
       envPackages = nixpkgs.lib.mapAttrs (name: r:
         pkgs.symlinkJoin {
           name = "featured-tape-${name}-deps";
-          paths = r.packages;
+          paths = ricePackages pkgs r;
         })
       rices;
     in {
@@ -144,7 +183,7 @@
       devShells = nixpkgs.lib.mapAttrs (name: r:
         pkgs.mkShell {
           name = "tape-${name}";
-          packages = r.packages;
+          packages = ricePackages pkgs r;
           shellHook = ''
             ${nixpkgs.lib.concatStringsSep "\n" (nixpkgs.lib.mapAttrsToList (
               k: v:

@@ -12,9 +12,14 @@
     pkgs.qt6.qtpositioning
     pkgs.qt6.qtmultimedia
     pkgs.qt6.qtimageformats
-    pkgs.kdePackages.kirigami
+    pkgs.kdePackages.kirigami.unwrapped
+    pkgs.kdePackages.qqc2-desktop-style
+    pkgs.kdePackages.sonnet
     pkgs.kdePackages.syntax-highlighting
   ];
+
+  qmlDirs = map (p: "${p}/${qmlPrefix}") qtModules;
+  pluginDirs = map (p: "${p}/${pluginPrefix}") qtModules;
 
   end4Python = pkgs.python3.withPackages (ps:
     with ps; [
@@ -47,6 +52,13 @@ EOF
     fi
     chmod -R u+w "$out"
 
+    # Populate the rounded-polygon-qmljs git submodule at quickshell/ii/modules/common/widgets/shapes.
+    if [ -d "${inputs.end-4-rounded-polygon}" ]; then
+      mkdir -p "$out/quickshell/ii/modules/common/widgets/shapes"
+      cp -r "${inputs.end-4-rounded-polygon}/." "$out/quickshell/ii/modules/common/widgets/shapes/"
+      chmod -R u+w "$out/quickshell/ii/modules/common/widgets/shapes"
+    fi
+
     # Point ILLOGICAL_IMPULSE_VIRTUAL_ENV to the Nix-built Python environment.
     if [ -f "$out/hypr/hyprland/env.lua" ]; then
       sed -i \
@@ -69,14 +81,14 @@ EOF
   '';
 in {
   name = "end-4";
-  inherit tape;
+  inherit tape qmlDirs pluginDirs;
+  needsQuickshell = true;
 
   packages =
     qtModules
     ++ [end4Python]
     ++ lib.optional (pkgs ? kde-material-you-colors) pkgs.kde-material-you-colors
     ++ (with pkgs; [
-      quickshell
       hypridle
       hyprlock
       hyprpicker
@@ -138,8 +150,9 @@ in {
     ]);
 
   env = {
-    QML2_IMPORT_PATH = lib.concatStringsSep ":" (map (p: "${p}/${qmlPrefix}") qtModules);
-    QT_PLUGIN_PATH = lib.concatStringsSep ":" (map (p: "${p}/${pluginPrefix}") qtModules);
+    NIXPKGS_QT6_QML_IMPORT_PATH = lib.concatStringsSep ":" qmlDirs;
+    QML2_IMPORT_PATH = lib.concatStringsSep ":" qmlDirs;
+    QT_PLUGIN_PATH = lib.concatStringsSep ":" pluginDirs;
     ILLOGICAL_IMPULSE_VIRTUAL_ENV = "${end4Venv}";
   };
 }

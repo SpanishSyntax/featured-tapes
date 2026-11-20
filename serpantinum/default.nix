@@ -13,6 +13,9 @@
     pkgs.qt6.qtimageformats
   ];
 
+  qmlDirs = map (p: "${p}/${qmlPrefix}") qtModules;
+  pluginDirs = map (p: "${p}/${pluginPrefix}") qtModules;
+
   mkHelper = {
     pname,
     version,
@@ -80,8 +83,9 @@
       for prog in serpantinum serpantinumd; do
         makeWrapper "$out/share/serpantinum-shell/bin/$prog" "$out/bin/$prog" \
           --set SERPANTINUM_DIR "$out/share/serpantinum-shell/src" \
-          --prefix QML2_IMPORT_PATH : "${lib.concatStringsSep ":" (map (p: "${p}/${qmlPrefix}") qtModules)}" \
-          --prefix QT_PLUGIN_PATH : "${lib.concatStringsSep ":" (map (p: "${p}/${pluginPrefix}") qtModules)}" \
+          --prefix NIXPKGS_QT6_QML_IMPORT_PATH : "${lib.concatStringsSep ":" qmlDirs}" \
+          --prefix QML2_IMPORT_PATH : "${lib.concatStringsSep ":" qmlDirs}" \
+          --prefix QT_PLUGIN_PATH : "${lib.concatStringsSep ":" pluginDirs}" \
           --prefix PATH : "${lib.makeBinPath (
         with pkgs; [
           bash
@@ -137,14 +141,14 @@
   '';
 in {
   name = "serpantinum";
-  inherit tape;
+  inherit tape qmlDirs pluginDirs;
+  needsQuickshell = true;
 
   packages =
     qtModules
     ++ [serpantinumShell]
     ++ serpantinumHelpers
     ++ (with pkgs; [
-      quickshell
       matugen
       wl-clipboard
       cliphist
@@ -167,7 +171,8 @@ in {
     ]);
 
   env = {
-    QML2_IMPORT_PATH = lib.concatStringsSep ":" (map (p: "${p}/${qmlPrefix}") qtModules);
-    QT_PLUGIN_PATH = lib.concatStringsSep ":" (map (p: "${p}/${pluginPrefix}") qtModules);
+    NIXPKGS_QT6_QML_IMPORT_PATH = lib.concatStringsSep ":" qmlDirs;
+    QML2_IMPORT_PATH = lib.concatStringsSep ":" qmlDirs;
+    QT_PLUGIN_PATH = lib.concatStringsSep ":" pluginDirs;
   };
 }

@@ -79,6 +79,22 @@
         "type": "github"
       }
     },
+    "end-4-rounded-polygon": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1771173575,
+        "narHash": "sha256-p1Ia0oQCWnik2saVMgv7IABkaJV43PoY7uuwXjXlc+Q=",
+        "owner": "end-4",
+        "repo": "rounded-polygon-qmljs",
+        "rev": "e31ec4cb4ebf6a46b267f5c42eabf6874916fa16",
+        "type": "github"
+      },
+      "original": {
+        "owner": "end-4",
+        "repo": "rounded-polygon-qmljs",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -209,6 +225,7 @@
         "caelestia-dots": "caelestia-dots",
         "caelestia-shell": "caelestia-shell",
         "end-4-dots": "end-4-dots",
+        "end-4-rounded-polygon": "end-4-rounded-polygon",
         "flake-utils": "flake-utils",
         "m3shapes": "m3shapes_2",
         "nebula-dots": "nebula-dots",

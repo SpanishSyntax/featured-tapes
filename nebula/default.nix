@@ -42,6 +42,11 @@
     pkgs.qt6.qtimageformats
   ];
 
+  qmlDirs =
+    ["${m3shapes}/lib/qt6/qml"]
+    ++ map (p: "${p}/${qmlPrefix}") qtModules;
+  pluginDirs = map (p: "${p}/${pluginPrefix}") qtModules;
+
   tape = pkgs.runCommand "featured-tape-nebula" {} ''
     mkdir -p "$out"
     for item in hypr quickshell matugen ghostty; do
@@ -64,13 +69,13 @@
   '';
 in {
   name = "nebula";
-  inherit tape;
+  inherit tape qmlDirs pluginDirs;
+  needsQuickshell = true;
 
   packages =
     qtModules
     ++ [m3shapes]
     ++ (with pkgs; [
-      quickshell
       matugen
       ghostty
       wl-clipboard
@@ -105,10 +110,8 @@ in {
     ]);
 
   env = {
-    QML2_IMPORT_PATH = lib.concatStringsSep ":" ([
-        "${m3shapes}/lib/qt6/qml"
-      ]
-      ++ map (p: "${p}/${qmlPrefix}") qtModules);
-    QT_PLUGIN_PATH = lib.concatStringsSep ":" (map (p: "${p}/${pluginPrefix}") qtModules);
+    NIXPKGS_QT6_QML_IMPORT_PATH = lib.concatStringsSep ":" qmlDirs;
+    QML2_IMPORT_PATH = lib.concatStringsSep ":" qmlDirs;
+    QT_PLUGIN_PATH = lib.concatStringsSep ":" pluginDirs;
   };
 }

@@ -12,7 +12,12 @@
       fi
     done
 
-    grep -v '^install =' ${./tape.toml} > "$out/tape.toml"
+    sed \
+      -e '/^install =/d' \
+      -e 's#mmsg dispatch reload_config#mmsg -s -d reload_config#g' \
+      -e "s#\"noctalia -d\"#\"pkill -x 'qs|quickshell|[.]quickshell-wra|noctalia' || true\", \"noctalia -d\"#g" \
+      -e 's#"pkill noctalia"#"pkill -x noctalia || true"#g' \
+      ${./tape.toml} > "$out/tape.toml"
   '';
 in {
   name = "noctalia-libre";
@@ -24,9 +29,15 @@ in {
     foot
     btop
     helix
+    cliphist
+    pamixer
+    hyprshot
+    swayosd
     bibata-cursors
     wl-clipboard
     hyprpicker
+    maple-mono.NF
+    monocraft
   ];
 
   env = {};

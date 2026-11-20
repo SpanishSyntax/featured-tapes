@@ -4,6 +4,9 @@
   inputs,
   ...
 }: let
+  qmlPrefix = pkgs.qt6.qtbase.qtQmlPrefix;
+  pluginPrefix = pkgs.qt6.qtbase.qtPluginPrefix;
+
   m3shapes = pkgs.stdenv.mkDerivation {
     pname = "m3shapes";
     version = "1.0.0";
@@ -34,6 +37,11 @@
     };
   };
 
+  qtModules = [
+    pkgs.qt6.qtmultimedia
+    pkgs.qt6.qtimageformats
+  ];
+
   tape = pkgs.runCommand "featured-tape-nebula" {} ''
     mkdir -p "$out"
     for item in hypr quickshell matugen ghostty; do
@@ -41,25 +49,66 @@
         cp -r "${inputs.nebula-dots}/$item" "$out/$item"
       fi
     done
+    chmod -R u+w "$out"
 
-    grep -v '^install =' ${./tape.toml} > "$out/tape.toml"
+    if [ -f "$out/hypr/hyprland/execs.lua" ]; then
+      sed -i \
+        -e "s#/usr/lib/mate-polkit/polkit-mate-authentication-agent-1#${pkgs.mate-polkit}/libexec/polkit-mate-authentication-agent-1#g" \
+        "$out/hypr/hyprland/execs.lua"
+    fi
+
+    sed \
+      -e '/^install =/d' \
+      -e "s#\"pkill -x qs\"#\"pkill -x 'qs|quickshell|[.]quickshell-wra' || true\"#g" \
+      ${./tape.toml} > "$out/tape.toml"
   '';
 in {
   name = "nebula";
   inherit tape;
 
-  packages = with pkgs; [
-    quickshell
-    m3shapes
-    matugen
-    ghostty
-    material-symbols
-    papirus-icon-theme
-    qt6.qtdeclarative
-    qt6.qtshadertools
-  ];
+  packages =
+    qtModules
+    ++ [m3shapes]
+    ++ (with pkgs; [
+      quickshell
+      matugen
+      ghostty
+      wl-clipboard
+      cliphist
+      fuzzel
+      hypridle
+      hyprlock
+      brightnessctl
+      wireplumber
+      pipewire
+      playerctl
+      grim
+      slurp
+      jq
+      cava
+      gpu-screen-recorder
+      ffmpeg
+      zenity
+      libnotify
+      networkmanager
+      pciutils
+      xdg-utils
+      fastfetch
+      dbus
+      mate-polkit
+      material-symbols
+      inter
+      nerd-fonts.symbols-only
+      papirus-icon-theme
+      qt6.qtdeclarative
+      qt6.qtshadertools
+    ]);
 
   env = {
-    QML2_IMPORT_PATH = "${m3shapes}/lib/qt6/qml";
+    QML2_IMPORT_PATH = lib.concatStringsSep ":" ([
+        "${m3shapes}/lib/qt6/qml"
+      ]
+      ++ map (p: "${p}/${qmlPrefix}") qtModules);
+    QT_PLUGIN_PATH = lib.concatStringsSep ":" (map (p: "${p}/${pluginPrefix}") qtModules);
   };
 }

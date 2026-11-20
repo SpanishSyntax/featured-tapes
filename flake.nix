@@ -76,23 +76,55 @@
           example = ["caelestia" "nebula" "noctalia-libre"];
           description = "Featured tapes to materialize into `~/.tapes/<name>` along with their Nix runtime packages.";
         };
+
+        mutable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = ''
+            Seed writable copies of enabled featured tapes into `~/.tapes/<name>` (scaffolder mode)
+            so runtime theming tools (`matugen`, `noctalia`, `caelestia-cli`, `btop`) and `tapes-deck`
+            can write without hitting read-only `/nix/store` errors. Existing `~/.tapes/<name>`
+            directories are preserved across rebuilds; set to `false` for read-only Home Manager symlinks.
+          '';
+        };
       };
 
-      config = lib.mkIf (cfg.enable && cfg.tapes != []) {
-        home.packages = lib.concatMap (r: r.packages) selected;
+      config = lib.mkIf (cfg.enable && cfg.tapes != []) (lib.mkMerge [
+        {
+          home.packages = lib.concatMap (r: r.packages) selected;
 
-        home.sessionVariables =
-          lib.zipAttrsWith (_: values: lib.concatStringsSep ":" (lib.unique values)) (map (r: r.env) selected);
-
-        home.file = lib.listToAttrs (map (r: {
-            name = ".tapes/${r.name}";
-            value = {
-              source = r.tape;
-              recursive = true;
-            };
-          })
-          selected);
-      };
+          home.sessionVariables =
+            lib.zipAttrsWith (
+              _: values:
+                lib.concatStringsSep ":" (lib.unique (lib.concatMap (lib.splitString ":") values))
+            ) (map (r: r.env) selected);
+        }
+        (lib.mkIf cfg.mutable {
+          home.activation.seedFeaturedTapes = lib.hm.dag.entryAfter ["linkGeneration"] (
+            ''
+              mkdir -p "$HOME/.tapes"
+            ''
+            + lib.concatMapStringsSep "\n" (r: ''
+              if [ ! -e "$HOME/.tapes/${r.name}/tape.toml" ]; then
+                rm -rf "$HOME/.tapes/${r.name}"
+                mkdir -p "$HOME/.tapes/${r.name}"
+                cp -rL --no-preserve=mode "${r.tape}/." "$HOME/.tapes/${r.name}/"
+                chmod -R u+w "$HOME/.tapes/${r.name}"
+              fi
+            '') selected
+          );
+        })
+        (lib.mkIf (!cfg.mutable) {
+          home.file = lib.listToAttrs (map (r: {
+              name = ".tapes/${r.name}";
+              value = {
+                source = r.tape;
+                recursive = true;
+              };
+            })
+            selected);
+        })
+      ]);
     };
   in
     flake-utils.lib.eachSystem ["x86_64-linux" "aarch64-linux"] (system: let
@@ -118,7 +150,12 @@
           name = "tape-${name}";
           packages = r.packages;
           shellHook = ''
-            ${nixpkgs.lib.concatStringsSep "\n" (nixpkgs.lib.mapAttrsToList (k: v: ''export ${k}="${v}''${${k}:+:''$${k}}"'') r.env)}
+            ${nixpkgs.lib.concatStringsSep "\n" (nixpkgs.lib.mapAttrsToList (
+              k: v:
+                if nixpkgs.lib.hasSuffix "_PATH" k
+                then ''export ${k}="${v}''${${k}:+:''$${k}}"''
+                else ''export ${k}="${v}"''
+            ) r.env)}
             echo "Featured tape '${name}' runtime environment loaded."
             echo "Try it with: tapes insert -p ${r.tape}"
           '';

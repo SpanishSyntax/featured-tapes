@@ -39,11 +39,12 @@ Add `featured-tapes` to your flake inputs and enable the rices you want:
   programs.featured-tapes = {
     enable = true;
     tapes = [ "caelestia" "nebula" "noctalia-libre" ];
+    # mutable = true; # default: seeds writable copies into ~/.tapes/<name> (set false for read-only /nix/store symlinks)
   };
 }
 ```
 
-Each enabled rice is materialized into `~/.tapes/<name>` with its Nix runtime dependencies installed, ready to insert via `tapes insert <name>` or `tapes-deck`.
+Each enabled rice is seeded into `~/.tapes/<name>` with its Nix runtime dependencies, QML plugins, and fonts installed, ready to insert via `tapes insert <name>` or `tapes-deck`.
 
 </details>
 

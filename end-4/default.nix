@@ -73,10 +73,8 @@ in {
 
   packages =
     qtModules
-    ++ [
-      end4Python
-      pkgs.kde-material-you-colors
-    ]
+    ++ [end4Python]
+    ++ lib.optional (pkgs ? kde-material-you-colors) pkgs.kde-material-you-colors
     ++ (with pkgs; [
       quickshell
       hypridle
